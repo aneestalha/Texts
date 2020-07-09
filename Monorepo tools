@@ -1,0 +1,170 @@
+
+Tools for Monorepo - 
+
+Build & management tools
+Buck
+Facebook's monorepo-oriented build system.
+Alternative to Bazel if we face any difficulties.
+Lerna
+tool for managing JavaScript projects with multiple packages, built on Yarn.
+Yarn 
+JavaScript dependency management tool that supports monorepos through workspaces.
+a
+
+
+
+         CI tools
+Incremental CI in Jenkins with Bazel
+For many build systems, you have to do a clean build to be sure you’re getting the correct result, so your CI has to always do a clean build. But, Bazel is designed so that you never have to do a bazel clean.
+buildpipe Tools
+It dynamically generate Buildkite pipelines by looking at changes in projects.
+Codefresh 
+Its a CI/CD platform for Docker/Kubernetes that has native Monorepo support
+bazel-travis 
+This setup to use Travis CI in a Bazel monorepo.
+
+
+
+
+       Repository management tools
+Syncpack
+allows managing multiple package.json files in Lerna Monorepos.
+Builder 
+Makes it possible to ship the same scripts across projects in a Node.js monorepo, like,
+share build and testing scripts across projects.
+Ultra Runner 
+Script runner and build tool for Lerna, Pnpm, Rush and Yarn. 
+Scripts run concurrently, using the dependency topology. 
+Builds keep track of file changes and are skipped when possible.
+
+
+         
+ Code Management
+GitHub's CODEOWNERS can restrict who can approve a pull request that affects a given part of a monorepo.
+This will form a very important part as we need to very closely handle access protocols and merge requests.
+
+Git Management -        
+ 
+Git prune  (Git Features)
+    If you don’t need to maintain a full history
+Git dissociate  (Git Features)
+ To reduce network transfer,
+Git Sparse checkout (Git Features)
+Git shallow clones  (Git Features)
+	Provide an argument of -- depth 1 to the git clone command to copy only the latest,
+WORKSPACE file handling   -   Usually putting WORKSPACE at the root of the repository has adv
+******Below info are for your understanding so not formatted.
+ 
+ 
+git clone [--template=<template_directory>]
+	  [-l] [-s] [--no-hardlinks] [-q] [-n] [--bare] [--mirror]
+	  [-o <name>] [-b <name>] [-u <upload-pack>] [--reference <repository>]
+	  [--dissociate] [--separate-git-dir <git dir>]
+	  [--depth <depth>] [--[no-]single-branch] [--no-tags]
+	  [--recurse-submodules[=<pathspec>]] [--[no-]shallow-submodules]
+	  [--[no-]remote-submodules] [--jobs <n>] [--sparse]
+	  [--filter=<filter>] [--] <repository>
+	  [<directory>]
+Clones a repository into a newly created directory, creates remote-tracking branches for each branch in the cloned repository (visible using git branch --remotes), and creates and checks out an initial branch that is forked from the cloned repository’s currently active branch.
+After the clone, a plain git fetch without arguments will update all the remote-tracking branches, and a git pull without arguments will in addition merge the remote master branch into the current master branch, if any (this is untrue when "--single-branch" is given; see below).
+This default configuration is achieved by creating references to the remote branch heads under refs/remotes/origin and by initializing remote.origin.url and remote.origin.fetch configuration variables.
+
+
+--dissociate
+Borrow the objects from reference repositories specified with the --reference options only to reduce network transfer, and stop borrowing from them after a clone is made by making necessary local copies of borrowed objects. This option can also be used when cloning locally from a repository that already borrows objects from another repository—​the new repository will borrow objects from the same repository, and this option can be used to stop the borrowing.
+
+
+Why Git shallow clone 
+Git Shallow Clone
+Git shallow clone lets you pull down just the latest commits, not the entire repo history. So if your project has years of history, or history from thousands of commits, you can select a particular depth to pull
+
+How to Execute Git Shallow Clone
+Provide an argument of -- depth 1 to the git clone command to copy only the latest revision of a repo:
+git clone -–depth [depth] [remote-url]
+ 
+You can also use git shallow clone to access a single branch:
+git clone [remote-url] --branch [name] --single-branch [folder]
+ 
+With git shallow clone you get fewer files. And as a result, they clone faster. Builds and feedback can be delivered quicker.
+
+
+
+ Completely Remove Unwanted History
+If you don’t need to maintain a full history, you can use the following set of commands to remove the history entirely from your Git repo. With the repository cloned into a path on your workstation, use the --orphan option, which returns it to the init state with only one commit.
+ 
+Git Prune
+How to Prune Your Repos
+git checkout --orphan freshBranch
+git add -A
+git commit
+git branch -D master 
+git branch -m master 
+git push -f origin master 
+git gc --aggressive --prune=all
+git push -f origin master
+
+
+Add all the files in the path and commit. Next, you delete the remote master branch, rename the current branch to master. Then force push your new master to the code hosting environment. Finally, remove all the old files with the prune command, and push the new state to the remote.
+By pruning your repos, you can improve cloning performance without needing to use git shallow clone. Eliminating unwanted history lightens your repo, allowing it be delivered faster.
+How to Really Improve Git Performance
+Using git shallow clone can help manage large repos with a lot of history, even after pruning your repo. But it is a temporary fix. There is a better way. To manage your large repos, and deliver feedback to developers wherever they are located, there is Helix4Git.
+Helix4Git Solves Git Performance Issues
+Helix4Git allows you to store all your Git repos in the high-performance Perforce server. Your teams can still clone, push, and pull code using Git. But unlike with native Git, developers get their feedback faster without needing to use git shallow clone.
+That’s because using advanced replication, DevOps teams can quickly pull assets into their build pipeline. Customers who try Helix4Git experience 80% faster builds, that take up 18% less storage.
+And Helix4Git can also has an intelligent proxy cache functionality for remote sites. This allows everyone at the remote site to work as though they are sitting in the same room with the master Git server.
+
+Alternative to git shallow-clone: clone only one branch
+Since git 1.7.10, you can also limit the amount of history you clone by cloning a single branch, like so:
+
+git clone [remote url] --branch [branch_name] --single-branch [folder]
+
+This specific hack is useful when you’re working with long running and divergent branches, or if you have lots of branches and only ever need to work with a few of them. If you only have a handful of branches with very few differences you probably won’t see a huge difference using this.
+
+
+
+
+
+
+CI tools
+
+use Bazel with Travis-CI.
+ 
+How it works
+There's a couple of tricks in here to make things work.
+Basically, .travis.yml lists a couple of apt packages that need to be installed to compile Bazel, and in before_install it clones the latest version of Bazel and compiles it.
+To do so it provides its own bazelrc file, which limits the RAM allocated to Bazel. It also adds more verbosity to the build process. Note that this bazelrc is not used to compile your code: it's used during the self-hosting process of Bazel.
+How do I use this?
+You will need:
+Everything that's in .travis.yml. Note that you can just merge that into your existing .travis.yml just fine - it doesn't specify any exclusive option, except that it requires Linux (either container-based or legacy).
+The .bazelrc.
+Everything under tools/, that includes the sha256 fingerprint for Bazel's installer.
+A (possibly empty) WORKSPACE file. See below.
+Your own script section in the .travis.yml config file.
+Where to put the WORKSPACE file
+If you don't know what a WORKSPACE file is, I( ujjwal ) will expain .
+In this example, I chose to put WORKSPACE at the root of the repository. This has the advantage that I can follow the convention of having my code in /src/ at the root of the repository and have that be //src/ for Bazel.
+Be careful about using //.... This will include paths that are in Bazel's base workspace, including build utilities for many languages and environments (Rust, D, Android, etc.). This may make Bazel pull large blobs from the network.
+Using Bazel in your Travis config
+The bazel binary is in ~/bin/. You can do stuff like:
+script:
+  - bin/bazel test //src/...
+
+
+
+
+
+
+
+
+
+STORY:
+
+SSINTIEI07-31 Implement the metrics gathering for the CI/CD pipeline.
+
+
+
+SSINTIEI07-33 Implement and document CI/CD Process from lower environment to production.
+
+
+
+
